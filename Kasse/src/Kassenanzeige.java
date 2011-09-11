@@ -22,6 +22,9 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+
+import java.awt.event.InputMethodEvent;
+import java.awt.event.InputMethodListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
@@ -48,37 +51,31 @@ public class Kassenanzeige extends JFrame{
 	public Kassenanzeige() {
 		items = generateItems();
 		JPanel buttonpanel = new JPanel();
-		FlowLayout fl_buttonpanel = (FlowLayout) buttonpanel.getLayout();
-		generateButtonPanelItems(items, buttonpanel);
-		JPanel ergebnisButtonPanel = new JPanel();
-		
-		JLayeredPane calcPane = new JLayeredPane();
-		
 		ergebnisText = new JTextField();
 		ergebnisText.setEditable(false);
 		ergebnisText.setColumns(10);
+		sumAction = new ErgebnisAction(ergebnisText);
 		
+		gegebenText = new JTextField();
+		gegebenText.setColumns(10);
+		
+		generateButtonPanelItems(items, buttonpanel, sumAction, gegebenText);
+		
+		JPanel ergebnisButtonPanel = new JPanel();
+		
+		JLayeredPane calcPane = new JLayeredPane();
 
 		rueckgeldText = new JTextField();
 		rueckgeldText.setEditable(false);
 		rueckgeldText.setColumns(10);
-		
-
-		gegebenText = new JTextField();
-		gegebenText.setColumns(10);
-		
-		sumAction = new ErgebnisAction(ergebnisText);
-		
 
 		JButton btnErgebnis = new JButton("Ergebnis");
 		btnErgebnis.addActionListener(sumAction);
-		ergebnisButtonPanel.add(btnErgebnis);
+		//ergebnisButtonPanel.add(btnErgebnis);
 		
 		JLayeredPane statPane = new JLayeredPane();
-		
-		
+
 		JLabel lblGegeben = new JLabel("Gegeben");
-		
 		
 		JLabel lblRckgeld = new JLabel("R\u00FCckgeld");
 		
@@ -139,11 +136,11 @@ public class Kassenanzeige extends JFrame{
 		JButton btnBezahlt = new JButton("Bezahlt");
 		ergebnisButtonPanel.add(btnBezahlt);
 		gegebenAction = new RueckgeldGegebenAction(gegebenText, ergebnisText, rueckgeldText);
+		gegebenText.addActionListener(gegebenAction);
 		btnBezahlt.addActionListener(gegebenAction);
 		
 		JButton btnOk = new JButton("OK");
-		ergebnisButtonPanel.add(btnOk);
-		
+		//ergebnisButtonPanel.add(btnOk);
 		
 		JButton btnReset = new JButton("Reset");
 		ergebnisButtonPanel.add(btnReset);
@@ -152,8 +149,7 @@ public class Kassenanzeige extends JFrame{
 		
 		statTable = new JTable();
 		statTable.setBounds(10, 11, 339, 220);
-		statPane.add(statTable);
-		
+//		statPane.add(statTable);
 		
 		calcPane.add(einzelPosten);
 		getContentPane().setLayout(groupLayout);
@@ -162,9 +158,7 @@ public class Kassenanzeige extends JFrame{
 		this.setSize(817, 638);
 	}
 	
-	
-	
-	private void generateButtonPanelItems(Map<String, Item> items, JPanel buttonPanel) {
+	private void generateButtonPanelItems(Map<String, Item> items, JPanel buttonPanel, Action action, JTextField gegebenText) {
 		this.einzelPostenList = new DefaultListModel();
 		this.einzelPosten = new JList(einzelPostenList);
 		
@@ -181,7 +175,7 @@ public class Kassenanzeige extends JFrame{
 		for (String key : items.keySet()) {
 			Item item = items.get(key);
 			JButton button = new JButton(item.getLabel());
-			button.addActionListener(new ButtonItemAction(item, einzelPostenList));
+			button.addActionListener(new ButtonItemAction(item, einzelPostenList, action, gegebenText));
 			buttonPanel.add(button);
 		}
 	}
@@ -199,6 +193,10 @@ public class Kassenanzeige extends JFrame{
 	
 	private class RueckgeldGegebenAction extends AbstractAction {
 
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -4651004013756674073L;
 		JTextField gegebenText;
 		JTextField summeText;
 		JTextField rueckgeldText;
@@ -211,9 +209,13 @@ public class Kassenanzeige extends JFrame{
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			BigDecimal rueckgeld = new BigDecimal(0, new MathContext(2));
-			BigDecimal summe = new BigDecimal(summeText.getText(), new MathContext(2));
-			BigDecimal gegeben = new BigDecimal(gegebenText.getText(), new MathContext(2));
+			MathContext mc = new MathContext(5);
+			BigDecimal rueckgeld = new BigDecimal(0, mc);
+			rueckgeld.setScale(5);
+			BigDecimal summe = new BigDecimal(summeText.getText(), mc);
+			summe.setScale(5);
+			BigDecimal gegeben = new BigDecimal(gegebenText.getText(), mc);
+			gegeben.setScale(5);
 			
 			rueckgeld = summe.negate().add(gegeben);
 			
@@ -229,16 +231,22 @@ public class Kassenanzeige extends JFrame{
 		private static final long serialVersionUID = 5818085178167205425L;
 		Item item;
 		DefaultListModel list;
+		Action action;
+		JTextField focusText;
 		
-		public ButtonItemAction(Item item, DefaultListModel list) {
+		public ButtonItemAction(Item item, DefaultListModel list, Action action, JTextField focusText) {
 			this.item = item;
 			this.list = list;
+			this.action = action;
+			this.focusText = focusText;
 			putValue(NAME, "Item Action for Item : " +  item.toString());
 			putValue(SHORT_DESCRIPTION, "ItemAction" + item.getId());
 		}
 		public void actionPerformed(ActionEvent e) {
 			list.addElement(item.getListString());
 			ItemContainer.getItemContainer().addItem(item);
+			action.actionPerformed(e);
+			focusText.requestFocus();
 		}
 	}
 
@@ -268,6 +276,7 @@ public class Kassenanzeige extends JFrame{
 			gegebenfeld.setText("");
 			rueckgeldfeld.setText("");
 			ergebnislist.clear();
+			ItemContainer.getItemContainer().deleteItems();
 		}
 	}
 	

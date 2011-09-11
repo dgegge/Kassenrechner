@@ -45,10 +45,11 @@ public class ItemContainer {
 	
 	public BigDecimal calculateSum() {
 		BigDecimal d = new BigDecimal(0.0);
+		d.setScale(5);
 		for (Item item : items) {
 			d = d.add(item.getValue());
 		}
-		return d.round(new MathContext(2));
+		return d;
 	}
 	
 	public Map<String, List<Item>> getStats() {
