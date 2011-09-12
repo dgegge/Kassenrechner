@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
@@ -134,7 +135,7 @@ public class Kassenanzeige extends JFrame{
 		);
 		
 		JButton btnBezahlt = new JButton("Bezahlt");
-		ergebnisButtonPanel.add(btnBezahlt);
+		//ergebnisButtonPanel.add(btnBezahlt);
 		gegebenAction = new RueckgeldGegebenAction(gegebenText, ergebnisText, rueckgeldText);
 		gegebenText.addActionListener(gegebenAction);
 		btnBezahlt.addActionListener(gegebenAction);
@@ -158,6 +159,7 @@ public class Kassenanzeige extends JFrame{
 		this.setSize(817, 638);
 	}
 	
+	
 	private void generateButtonPanelItems(Map<String, Item> items, JPanel buttonPanel, Action action, JTextField gegebenText) {
 		this.einzelPostenList = new DefaultListModel();
 		this.einzelPosten = new JList(einzelPostenList);
@@ -175,6 +177,8 @@ public class Kassenanzeige extends JFrame{
 		for (String key : items.keySet()) {
 			Item item = items.get(key);
 			JButton button = new JButton(item.getLabel());
+			button.setBackground(item.getBackgroundColor());
+			button.setForeground(item.getFontColor());
 			button.addActionListener(new ButtonItemAction(item, einzelPostenList, action, gegebenText));
 			buttonPanel.add(button);
 		}
@@ -183,10 +187,14 @@ public class Kassenanzeige extends JFrame{
 	private Map<String, Item> generateItems() {
 		MathContext mc = new MathContext(2);
 		Map<String, Item> itemMap = new HashMap<String,Item>();
-		itemMap.put("Wurst", new Item("Wurst", "Wurst", new BigDecimal(2.20,mc)));
-		itemMap.put("Bier", new Item("Bier", "Bier", new BigDecimal(2.20,mc)));
-		itemMap.put("Pommes", new Item("Pommes", "Pommes", new BigDecimal(1.30,mc)));
-		itemMap.put("Cola", new Item("Cola", "Cola", new BigDecimal(1.5,mc)));
+		itemMap.put("Wurst", new Item("Wurst", "Wurst", new BigDecimal(2.20,mc), Color.blue, Color.white));
+		itemMap.put("Bier", new Item("Bier", "Bier", new BigDecimal(2.30,mc), Color.green, Color.black));
+		itemMap.put("Pommes", new Item("Pommes", "Pommes", new BigDecimal(1.30,mc), Color.yellow, Color.black));
+		itemMap.put("Cola / Fanta", new Item("Cola", "Cola", new BigDecimal(1.5,mc), Color.orange, Color.black));
+		itemMap.put("Wein", new Item("Wein", "Wein", new BigDecimal(2.5,mc), Color.pink, Color.black));
+		itemMap.put("Schorle", new Item("Schorle", "Schorle", new BigDecimal(2.3,mc), Color.green, Color.black));
+		itemMap.put("Essen", new Item("Essen", "Essen", new BigDecimal(6.0,mc), Color.white, Color.black));
+		itemMap.put("Maultaschen", new Item("Maultaschen", "Maultaschen", new BigDecimal(3.0,mc), Color.white, Color.black));
 		return itemMap;
 		
 	}
@@ -214,11 +222,20 @@ public class Kassenanzeige extends JFrame{
 			rueckgeld.setScale(5);
 			BigDecimal summe = new BigDecimal(summeText.getText(), mc);
 			summe.setScale(5);
-			BigDecimal gegeben = new BigDecimal(gegebenText.getText(), mc);
+			String gegebenString = gegebenText.getText();
+			BigDecimal gegeben;
+			if (gegebenString == null || gegebenString.isEmpty()) {
+				gegeben = new BigDecimal(0, mc); 
+			} else {
+				
+				if (gegebenString.contains(",")) {
+					gegebenString = gegebenString.replace(",", ".");
+				}
+				
+				gegeben = new BigDecimal(gegebenString, mc);
+			}
 			gegeben.setScale(5);
-			
 			rueckgeld = summe.negate().add(gegeben);
-			
 			this.rueckgeldText.setText(rueckgeld.toString());
 		}
 		
